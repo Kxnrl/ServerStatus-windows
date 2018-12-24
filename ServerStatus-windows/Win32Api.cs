@@ -152,14 +152,16 @@ namespace ServerStatus_windows
             [DllImport("user32.dll ")]
             static extern bool SetForegroundWindow(IntPtr hwnd);
 
-            public static void Show()
-            {
-                ShowWindow(Process.GetCurrentProcess().MainWindowHandle, SW_SHOW);
-            }
+            static IntPtr myHandle = IntPtr.Zero;
 
-            public static void Hide()
+            public static void Show(bool show)
             {
-                ShowWindow(Process.GetCurrentProcess().MainWindowHandle, SW_HIDE);
+                if(myHandle == IntPtr.Zero)
+                {
+                    myHandle = Process.GetCurrentProcess().MainWindowHandle;
+                }
+
+                ShowWindow(myHandle, show ? SW_SHOW: SW_HIDE);
             }
 
             public static void Active()

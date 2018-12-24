@@ -14,6 +14,9 @@ namespace ServerStatus_windows
         public static NotifyIcon notifyIcon;
         public static MenuItem exitButton;
         public static MenuItem confButton;
+        public static MenuItem showButton;
+
+        public static bool Show = false;
     }
 
     class Program
@@ -58,15 +61,15 @@ namespace ServerStatus_windows
 
             ConfigTest();
 
-            Win32Api.Window.Hide();
-
             new Thread(Thread_Client).Start();
 
             tray.notifyMenu = new ContextMenu();
             tray.exitButton = new MenuItem("Exit");
             tray.confButton = new MenuItem("Config");
-            tray.notifyMenu.MenuItems.Add(0, tray.confButton);
-            tray.notifyMenu.MenuItems.Add(1, tray.exitButton);
+            tray.showButton = new MenuItem("Show");
+            tray.notifyMenu.MenuItems.Add(0, tray.showButton);
+            tray.notifyMenu.MenuItems.Add(1, tray.confButton);
+            tray.notifyMenu.MenuItems.Add(2, tray.exitButton);
 
             tray.notifyIcon = new NotifyIcon()
             {
@@ -77,32 +80,40 @@ namespace ServerStatus_windows
                 Visible = true,
             };
 
-            tray.exitButton.Click += new EventHandler(ApplicationHandler_TrayIcon);
+            tray.exitButton.Click += new EventHandler(ApplicationHandler_TrayIconExit);
+            tray.confButton.Click += new EventHandler(ApplicationHandler_TrayIconConf);
+            tray.showButton.Click += new EventHandler(ApplicationHandler_TrayIconShow);
 
             tray.notifyIcon.BalloonTipTitle = "ServerStatus-windows";
             tray.notifyIcon.BalloonTipText = "Start monitoring!";
             tray.notifyIcon.ShowBalloonTip(5000);
 
+            Win32Api.Window.Show(false);
+
             Application.Run();
         }
 
-        private static void ApplicationHandler_TrayIcon(object sender, EventArgs e)
+        private static void ApplicationHandler_TrayIconExit(object sender, EventArgs e)
         {
-            MenuItem item = (MenuItem)sender;
-            if (item == tray.exitButton)
-            {
-                tray.notifyIcon.Visible = false;
-                tray.notifyIcon.Dispose();
-                Thread.Sleep(50);
-                Environment.Exit(0);
-            }
-            else if (item == tray.confButton)
-            {
-                MessageBox.Show("You can edit config manually." + Environment.NewLine + "You need to restart program after editing.", "ServerStatus-windows", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
-                Process.Start("notepad.exe", Application.StartupPath + "\\server_config.ini");
-                Process.Start("explorer.exe", Application.StartupPath);
-                Environment.Exit(0);
-            }
+            tray.notifyIcon.Visible = false;
+            tray.notifyIcon.Dispose();
+            Thread.Sleep(50);
+            Environment.Exit(0);
+        }
+
+        private static void ApplicationHandler_TrayIconConf(object sender, EventArgs e)
+        {
+            MessageBox.Show("You can edit config manually." + Environment.NewLine + "You need to restart program after editing.", "ServerStatus-windows", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
+            Process.Start("notepad.exe", Application.StartupPath + "\\server_config.ini");
+            Process.Start("explorer.exe", Application.StartupPath);
+            Environment.Exit(0);
+        }
+
+        private static void ApplicationHandler_TrayIconShow(object sender, EventArgs e)
+        {
+            tray.Show = !tray.Show;
+            tray.showButton.Text = tray.Show ? "Hide" : "Show";
+            Win32Api.Window.Show(tray.Show);
         }
 
         static void Thread_Client()
